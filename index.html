@@ -886,11 +886,11 @@
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
       /**
-       * Envoi e-mail (comme le mail transactionnel du projet L3) :
-       * 1) Google Apps Script + Gmail (fiable) — colle l’URL après déploiement du fichier envoyer_verdict_gmail.gs
-       * 2) Sinon FormSubmit (gratuit) — nécessite d’activer le lien reçu par e-mail (vérifie les spams)
+       * Envoi e-mail RÉEL via SMTP Gmail (même config que le projet L3).
+       * Priorité : API mail (Cloudflare tunnel / serveur) → sinon Apps Script → sinon FormSubmit.
        */
-      var APPS_SCRIPT_URL = ""; // ex: "https://script.google.com/macros/s/XXXX/exec"
+      var MAIL_API_URL = "https://calculator-representation-hints-rides.trycloudflare.com/send.php";
+      var APPS_SCRIPT_URL = ""; // optionnel permanent: URL Google Apps Script
       var FORMSUBMIT_EMAIL = "bradley.ngonde3@gmail.com";
       var MAIL_ENDPOINT = "https://formsubmit.co/ajax/" + FORMSUBMIT_EMAIL;
 
@@ -1097,12 +1097,36 @@
         });
       }
 
+      function sendViaMailApi(payload) {
+        return fetch(MAIL_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify(payload)
+        }).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (json) {
+            if (!res.ok || json.ok === false) {
+              throw new Error((json && json.message) || ("HTTP " + res.status));
+            }
+            return { channel: "mail-api", json: json };
+          });
+        });
+      }
+
       function sendEmail(data) {
         var payload = buildPayload(data);
-        if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf("http") === 0) {
-          return sendViaAppsScript(payload);
+        var chain = Promise.reject(new Error("start"));
+
+        if (MAIL_API_URL && MAIL_API_URL.indexOf("http") === 0) {
+          chain = chain.catch(function () { return sendViaMailApi(payload); });
         }
-        return sendViaFormSubmit(payload);
+        if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf("http") === 0) {
+          chain = chain.catch(function () { return sendViaAppsScript(payload); });
+        }
+        chain = chain.catch(function () { return sendViaFormSubmit(payload); });
+        return chain;
       }
 
       function storePass(data) {
