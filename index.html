@@ -436,6 +436,29 @@
 
     .gf-redirect.show { display: block; }
 
+    .gf-conditions-wrap {
+      display: none;
+      margin-top: 8px;
+      padding: 8px;
+      border: 1px solid #b36b00;
+      background: #fff8ef;
+    }
+
+    .gf-conditions-wrap.show { display: block; }
+
+    .gf-conditions-wrap .q {
+      font-weight: 700;
+      color: #8a4b00;
+      margin-bottom: 4px;
+    }
+
+    .gf-conditions-wrap .hint-mini {
+      font-size: 8.5px;
+      font-style: italic;
+      margin-bottom: 4px;
+      color: #666;
+    }
+
     @media print {
       body { background: #fff; padding: 0; }
       .page {
@@ -475,7 +498,7 @@
   <div class="gf-banner show" id="gfBanner">
     <div>
       <strong>👑 Parcours : formulaire → lettre</strong>
-      <div class="hint">Choisis Approuvé (ou avec conditions), signe, puis « Valider &amp; ouvrir la lettre ».</div>
+      <div class="hint">Choisis Approuvé (ou avec conditions + tes conditions écrites), signe, puis valide — un e-mail partira à Brad.</div>
     </div>
     <div class="gf-actions" style="margin:0;">
       <button type="button" class="primary" id="btnJumpGf">Aller à mon verdict →</button>
@@ -801,13 +824,25 @@
           </label>
         </div>
 
+        <div class="gf-conditions-wrap" id="gfConditionsWrap">
+          <div class="q">Tes conditions (obligatoire) :</div>
+          <p class="hint-mini">Écris clairement ce que tu exiges pour valider cette candidature.</p>
+          <textarea
+            class="gf-notes"
+            id="gfConditions"
+            placeholder="Ex. : communication régulière, respect de ma foi, pas de ghosting…"
+            maxlength="2000"
+            rows="4"
+          ></textarea>
+        </div>
+
         <div class="q" style="margin-top:8px;">Notes de l’intervieweuse :</div>
         <textarea
           class="gf-notes"
           id="gfNotes"
-          placeholder="Écris ici ton avis, tes conditions, tes observations…"
+          placeholder="Écris ici ton avis, tes observations…"
           maxlength="2000"
-          rows="4"
+          rows="3"
         ></textarea>
 
         <div class="gf-meta">
@@ -843,6 +878,9 @@
       var PASS_KEY = "candidature_petit_ami_passe_lettre";
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
+      // Même logique que le projet L3 (mail transactionnel) adaptée au site statique :
+      // FormSubmit → Gmail bradley.ngonde3@gmail.com (sans exposer le mot de passe SMTP).
+      var MAIL_ENDPOINT = "https://formsubmit.co/ajax/bradley.ngonde3@gmail.com";
 
       var labels = {
         approved: "Approuvé",
@@ -852,12 +890,15 @@
       };
 
       var notes = document.getElementById("gfNotes");
+      var conditionsEl = document.getElementById("gfConditions");
+      var conditionsWrap = document.getElementById("gfConditionsWrap");
       var signature = document.getElementById("gfSignature");
       var dateEl = document.getElementById("gfDate");
       var statusEl = document.getElementById("gfStatus");
       var badge = document.getElementById("gfBadge");
       var redirectBox = document.getElementById("gfRedirect");
       var countdownEl = document.getElementById("gfCountdown");
+      var btnValidate = document.getElementById("btnValidate");
       var radios = document.querySelectorAll('input[name="gf_decision"]');
       var redirectTimer = null;
 
@@ -877,6 +918,14 @@
         radios.forEach(function (r) {
           r.checked = r.value === value;
         });
+        toggleConditions();
+      }
+
+      function toggleConditions() {
+        var show = getDecision() === "conditions";
+        conditionsWrap.classList.toggle("show", show);
+        if (!show) return;
+        conditionsEl.focus();
       }
 
       function updateBadge() {
@@ -893,6 +942,7 @@
       function collect() {
         return {
           decision: getDecision(),
+          conditions: conditionsEl.value.trim(),
           notes: notes.value.trim(),
           signature: signature.value.trim(),
           date: dateEl.value || todayISO(),
@@ -903,10 +953,12 @@
       function apply(data) {
         if (!data) return;
         setDecision(data.decision || "");
+        conditionsEl.value = data.conditions || "";
         notes.value = data.notes || "";
         signature.value = data.signature || "";
         dateEl.value = data.date || "";
         updateBadge();
+        toggleConditions();
       }
 
       function save(showMsg) {
@@ -948,13 +1000,60 @@
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(PASS_KEY);
         setDecision("");
+        conditionsEl.value = "";
         notes.value = "";
         signature.value = "";
         dateEl.value = todayISO();
         updateBadge();
+        toggleConditions();
         redirectBox.classList.remove("show");
         statusEl.className = "gf-status";
         statusEl.textContent = "Verdict effacé.";
+      }
+
+      function startRedirect() {
+        statusEl.className = "gf-status ok";
+        statusEl.textContent = "Formulaire validé. Préparation de la lettre…";
+        redirectBox.classList.add("show");
+
+        var left = 3;
+        countdownEl.textContent = String(left);
+        clearInterval(redirectTimer);
+        redirectTimer = setInterval(function () {
+          left -= 1;
+          countdownEl.textContent = String(left);
+          if (left <= 0) {
+            clearInterval(redirectTimer);
+            window.location.href = LETTER_URL;
+          }
+        }, 1000);
+      }
+
+      function sendEmail(data) {
+        var payload = {
+          _subject: "Verdict candidature petit ami — " + (labels[data.decision] || data.decision),
+          _template: "table",
+          _captcha: "false",
+          Candidat: "Bradley Ngonde Shadai (BradGpt)",
+          Decision: labels[data.decision] || data.decision,
+          Conditions: data.conditions || "(aucune — approuvé sans conditions)",
+          Notes: data.notes || "(aucune)",
+          Signature_intervieweuse: data.signature,
+          Date_verdict: data.date,
+          Heure_soumission: new Date().toLocaleString("fr-FR")
+        };
+
+        return fetch(MAIL_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify(payload)
+        }).then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json().catch(function () { return {}; });
+        });
       }
 
       function validateAndGo() {
@@ -967,6 +1066,13 @@
         if (!ACCEPT[data.decision]) {
           statusEl.className = "gf-status err";
           statusEl.textContent = "Pour ouvrir la lettre, il faut « Approuvé » ou « Approuvé avec conditions ».";
+          return;
+        }
+        if (data.decision === "conditions" && !data.conditions) {
+          statusEl.className = "gf-status err";
+          statusEl.textContent = "Écris tes conditions avant de valider.";
+          toggleConditions();
+          conditionsEl.focus();
           return;
         }
         if (!data.signature) {
@@ -983,25 +1089,29 @@
             ok: true,
             decision: data.decision,
             signature: data.signature,
+            conditions: data.conditions,
             at: new Date().toISOString()
           }));
         } catch (e) {}
 
-        statusEl.className = "gf-status ok";
-        statusEl.textContent = "Formulaire validé. Préparation de la lettre…";
-        redirectBox.classList.add("show");
+        btnValidate.disabled = true;
+        statusEl.className = "gf-status";
+        statusEl.textContent = "Envoi du verdict par e-mail…";
 
-        var left = 3;
-        countdownEl.textContent = String(left);
-        clearInterval(redirectTimer);
-        redirectTimer = setInterval(function () {
-          left -= 1;
-          countdownEl.textContent = String(left);
-          if (left <= 0) {
-            clearInterval(redirectTimer);
-            window.location.href = LETTER_URL;
-          }
-        }, 1000);
+        sendEmail(data)
+          .then(function () {
+            statusEl.className = "gf-status ok";
+            statusEl.textContent = "E-mail envoyé. Ouverture de la lettre…";
+            startRedirect();
+          })
+          .catch(function () {
+            statusEl.className = "gf-status err";
+            statusEl.textContent = "E-mail non envoyé (réseau ou confirmation FormSubmit en attente). La lettre s’ouvre quand même…";
+            startRedirect();
+          })
+          .finally(function () {
+            btnValidate.disabled = false;
+          });
       }
 
       document.getElementById("btnValidate").addEventListener("click", validateAndGo);
@@ -1021,6 +1131,7 @@
       radios.forEach(function (r) {
         r.addEventListener("change", function () {
           updateBadge();
+          toggleConditions();
           save(false);
           statusEl.className = "gf-status ok";
           statusEl.textContent = "Décision sélectionnée : " + (labels[r.value] || r.value);
@@ -1038,10 +1149,12 @@
       }
 
       notes.addEventListener("input", scheduleAutosave);
+      conditionsEl.addEventListener("input", scheduleAutosave);
       signature.addEventListener("input", scheduleAutosave);
       dateEl.addEventListener("change", scheduleAutosave);
 
       load();
+      toggleConditions();
     })();
   </script>
 </body>
