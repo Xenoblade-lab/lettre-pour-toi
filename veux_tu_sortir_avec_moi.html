@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Une lettre pour toi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #2a1f1a;
+      --paper: #f7efe4;
+      --envelope: #e8d2b8;
+      --envelope-deep: #c9a882;
+      --flap: #d9b896;
+      --stamp: #c45c4a;
+      --stamp-ink: #f4e8dc;
+      --yes: #2f6b4f;
+      --yes-hover: #245640;
+      --no: #8a3b3b;
+      --glow-soft: rgba(255, 220, 180, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Outfit", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 90% 70% at 20% 15%, rgba(255, 200, 150, 0.45), transparent 55%),
+        radial-gradient(ellipse 80% 60% at 85% 80%, rgba(180, 120, 90, 0.28), transparent 50%),
+        linear-gradient(160deg, #3d2a24 0%, #6b4338 38%, #8f5a45 70%, #4a3028 100%);
+      display: grid;
+      place-items: center;
+      min-height: 100dvh;
+      padding: 24px 16px 40px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          -18deg,
+          transparent,
+          transparent 28px,
+          rgba(255, 255, 255, 0.02) 28px,
+          rgba(255, 255, 255, 0.02) 29px
+        );
+      pointer-events: none;
+    }
+
+    .stage {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 420px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .hint {
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(1.15rem, 3.5vw, 1.45rem);
+      font-style: italic;
+      color: rgba(247, 239, 228, 0.92);
+      text-align: center;
+      opacity: 0;
+      animation: fadeUp 1s ease 0.35s forwards;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      min-height: 1.6em;
+    }
+
+    .hint.hide {
+      opacity: 0 !important;
+      transform: translateY(-8px);
+      pointer-events: none;
+    }
+
+    /* Scène enveloppe + lettre */
+    .mail {
+      position: relative;
+      width: min(92vw, 360px);
+      height: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .envelope-wrap {
+      position: relative;
+      width: 100%;
+      height: 230px;
+      animation: floatSoft 4.5s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    .envelope-wrap.opened {
+      animation: none;
+    }
+
+    .envelope {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .envelope-body {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, #f0ddc6 0%, var(--envelope) 45%, var(--envelope-deep) 100%);
+      border-radius: 6px 6px 10px 10px;
+      box-shadow:
+        0 18px 40px rgba(20, 10, 5, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .envelope-body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top left, transparent 48%, rgba(255,255,255,0.12) 50%, transparent 52%),
+        linear-gradient(to top right, transparent 48%, rgba(255,255,255,0.08) 50%, transparent 52%);
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    .pocket {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 58%;
+      background: linear-gradient(180deg, #d4b696 0%, #c4a07c 100%);
+      clip-path: polygon(0 28%, 50% 100%, 100% 28%, 100% 100%, 0 100%);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .flap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 54%;
+      background: linear-gradient(180deg, var(--flap) 0%, #c9a67e 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition: transform 0.85s cubic-bezier(0.4, 0.05, 0.2, 1);
+      z-index: 5;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+      backface-visibility: hidden;
+    }
+
+    .envelope-wrap.opened .flap {
+      transform: rotateX(175deg);
+      z-index: 1;
+    }
+
+    .stamp {
+      position: absolute;
+      top: 12%;
+      right: 8%;
+      width: 72px;
+      height: 86px;
+      z-index: 6;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      background: transparent;
+      transform: rotate(7deg);
+      transition: transform 0.25s ease, opacity 0.45s ease;
+      animation: stampPulse 2.2s ease-in-out infinite;
+    }
+
+    .stamp:hover,
+    .stamp:focus-visible {
+      transform: rotate(7deg) scale(1.06);
+      outline: none;
+    }
+
+    .stamp-face {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,0.25), transparent 45%),
+        linear-gradient(160deg, #d96a58 0%, var(--stamp) 55%, #9e3d32 100%);
+      border: 3px dashed rgba(244, 232, 220, 0.75);
+      border-radius: 3px;
+      display: grid;
+      place-items: center;
+      padding: 6px;
+      color: var(--stamp-ink);
+      box-shadow: 0 6px 14px rgba(80, 20, 10, 0.35);
+    }
+
+    .stamp-face span {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.15;
+    }
+
+    .stamp-face small {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+    }
+
+    .envelope-wrap.opened .stamp {
+      pointer-events: none;
+      animation: none;
+      opacity: 0.35;
+    }
+
+    /* Lettre : au-dessus de l’enveloppe une fois ouverte */
+    .letter {
+      position: absolute;
+      left: 50%;
+      bottom: 95px;
+      width: 86%;
+      max-width: 310px;
+      transform: translate(-50%, 40%) scale(0.92);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: linear-gradient(180deg, #fffaf3 0%, var(--paper) 100%);
+      border-radius: 4px;
+      padding: 22px 18px 20px;
+      text-align: center;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      transition:
+        transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.45s ease,
+        bottom 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .mail.opened .letter {
+      opacity: 1;
+      pointer-events: auto;
+      bottom: 200px;
+      transform: translate(-50%, 0) scale(1);
+      z-index: 10;
+    }
+
+    .mail.opened .envelope-wrap {
+      z-index: 2;
+    }
+
+    .letter h1 {
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(1.4rem, 4.8vw, 1.85rem);
+      font-weight: 600;
+      line-height: 1.25;
+      margin-bottom: 6px;
+    }
+
+    .letter .sub {
+      font-family: "Cormorant Garamond", serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: rgba(42, 31, 26, 0.7);
+      margin-bottom: 10px;
+    }
+
+    .letter .ps {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      color: var(--stamp);
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+
+    .choices {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      min-height: 48px;
+    }
+
+    .btn {
+      font-family: "Outfit", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border: none;
+      padding: 11px 22px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-yes {
+      position: relative;
+      z-index: 2;
+      background: var(--yes);
+      color: #f7f3ee;
+      box-shadow: 0 4px 0 #1e4634;
+    }
+
+    .btn-yes:hover {
+      background: var(--yes-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-yes:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #1e4634;
+    }
+
+    .btn-no {
+      position: relative;
+      z-index: 3;
+      background: rgba(255, 250, 243, 0.95);
+      color: var(--no);
+      border: 1.5px solid rgba(138, 59, 59, 0.55);
+      transition: transform 0.14s ease-out, background 0.2s ease;
+      will-change: transform;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .btn-no.fleeing {
+      transition: transform 0.12s ease-out;
+    }
+
+    .btn-no.home {
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Succès */
+    .success {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(255, 230, 200, 0.25), transparent 55%),
+        rgba(30, 18, 14, 0.72);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.55s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .success.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .success-card {
+      width: min(100%, 380px);
+      background: linear-gradient(165deg, #fffaf3, #f0e0cf);
+      padding: 36px 28px;
+      text-align: center;
+      border: 1px solid rgba(42, 31, 26, 0.15);
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .success.show .success-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .success-card h2 {
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(1.8rem, 5vw, 2.35rem);
+      font-weight: 600;
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .success-card p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: rgba(42, 31, 26, 0.78);
+      margin-bottom: 8px;
+    }
+
+    .success-card .from {
+      margin-top: 18px;
+      font-family: "Cormorant Garamond", serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--stamp);
+    }
+
+    .hearts {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .heart {
+      position: absolute;
+      bottom: -20px;
+      opacity: 0;
+      animation: rise 3.8s linear infinite;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floatSoft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes stampPulse {
+      0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+      50% { filter: drop-shadow(0 0 10px var(--glow-soft)); }
+    }
+
+    @keyframes rise {
+      0% { transform: translateY(0) scale(0.7); opacity: 0; }
+      15% { opacity: 0.85; }
+      100% { transform: translateY(-110vh) scale(1.15); opacity: 0; }
+    }
+
+    @media (max-width: 420px) {
+      .mail { height: 400px; }
+      .stamp { width: 62px; height: 74px; }
+      .mail.opened .letter { bottom: 185px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <p class="hint" id="hint">Appuie sur le timbre pour ouvrir la lettre</p>
+
+    <div class="mail" id="mail">
+      <div class="letter" id="letter" aria-hidden="true">
+        <h1>Veux-tu sortir avec moi&nbsp;?</h1>
+        <p class="sub">Réponds sincèrement… ou essaie.</p>
+        <p class="ps">P.S. : Non n’est pas une option — essaie, tu ne vas pas croire 😂</p>
+        <div class="choices" id="choices">
+          <button type="button" class="btn btn-yes" id="btnYes">Oui</button>
+          <button type="button" class="btn btn-no" id="btnNo">Non</button>
+        </div>
+      </div>
+
+      <div class="envelope-wrap" id="envelope" aria-label="Enveloppe fermée">
+        <div class="envelope">
+          <div class="flap" aria-hidden="true"></div>
+          <div class="envelope-body" aria-hidden="true"></div>
+          <div class="pocket" aria-hidden="true"></div>
+          <button type="button" class="stamp" id="stamp" aria-label="Ouvrir l'enveloppe en appuyant sur le timbre">
+            <div class="stamp-face">
+              <span>Pour toi<small>♥</small></span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="success" id="success" role="dialog" aria-modal="true" aria-labelledby="successTitle" hidden>
+    <div class="hearts" id="hearts" aria-hidden="true"></div>
+    <div class="success-card">
+      <h2 id="successTitle">C’est un oui.</h2>
+      <p>Merci. Je m’en souviendrai.</p>
+      <p>Prépare-toi : le soft-life commence maintenant.</p>
+      <p class="from">— BradGpt</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var mail = document.getElementById("mail");
+      var envelope = document.getElementById("envelope");
+      var stamp = document.getElementById("stamp");
+      var letter = document.getElementById("letter");
+      var hint = document.getElementById("hint");
+      var btnYes = document.getElementById("btnYes");
+      var btnNo = document.getElementById("btnNo");
+      var success = document.getElementById("success");
+      var hearts = document.getElementById("hearts");
+      var opened = false;
+      var ox = 0;
+      var oy = 0;
+      var homeTimer = null;
+      var chasing = false;
+
+      // Si elle arrive depuis le formulaire validé
+      try {
+        var passRaw = localStorage.getItem("candidature_petit_ami_passe_lettre");
+        if (passRaw) {
+          var pass = JSON.parse(passRaw);
+          if (pass && pass.ok) {
+            var who = pass.signature ? (" " + pass.signature) : "";
+            hint.textContent = "Dossier validé" + who + " — appuie sur le timbre";
+          }
+        }
+      } catch (e) {}
+
+      function openEnvelope() {
+        if (opened) return;
+        opened = true;
+        mail.classList.add("opened");
+        envelope.classList.add("opened");
+        envelope.setAttribute("aria-label", "Enveloppe ouverte");
+        letter.setAttribute("aria-hidden", "false");
+        hint.classList.add("hide");
+        stamp.setAttribute("tabindex", "-1");
+        resetHome(false);
+      }
+
+      stamp.addEventListener("click", openEnvelope);
+
+      function resetHome(animate) {
+        btnNo.classList.toggle("home", !!animate);
+        btnNo.classList.remove("fleeing");
+        ox = 0;
+        oy = 0;
+        btnNo.style.transform = "translate(0px, 0px)";
+        chasing = false;
+      }
+
+      function scheduleHome() {
+        clearTimeout(homeTimer);
+        homeTimer = setTimeout(function () {
+          resetHome(true);
+        }, 480);
+      }
+
+      function fleeFrom(clientX, clientY) {
+        if (!opened) return;
+
+        clearTimeout(homeTimer);
+        chasing = true;
+        btnNo.classList.add("fleeing");
+        btnNo.classList.remove("home");
+
+        var rect = btnNo.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+
+        var dx = cx - clientX;
+        var dy = cy - clientY;
+        var dist = Math.hypot(dx, dy) || 1;
+
+        // Direction opposée au curseur + un peu d’aléatoire
+        var angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.1;
+        var jump = 70 + Math.random() * 90;
+
+        ox += Math.cos(angle) * jump;
+        oy += Math.sin(angle) * jump;
+
+        // Garde le bouton dans la zone de la lettre (pas au bout de la page)
+        var letterRect = letter.getBoundingClientRect();
+        var noW = rect.width;
+        var noH = rect.height;
+        var homeRect = btnNo.getBoundingClientRect();
+        // Position visuelle actuelle = home + transform ; on borne le translate
+        var maxX = letterRect.width * 0.38;
+        var maxY = letterRect.height * 0.42;
+        ox = Math.max(-maxX, Math.min(maxX, ox));
+        oy = Math.max(-maxY, Math.min(maxY, oy));
+
+        // Évite de couvrir le Oui
+        var yesRect = btnYes.getBoundingClientRect();
+        var nextCx = cx + (ox - (parseFloat(btnNo.dataset.ox) || 0));
+        var nextCy = cy + (oy - (parseFloat(btnNo.dataset.oy) || 0));
+        // Approche plus simple : si trop près de Oui, pousse vers l’extérieur
+        var predLeft = rect.left + (ox - (parseFloat(btnNo.dataset.ox) || 0));
+        var predTop = rect.top + (oy - (parseFloat(btnNo.dataset.oy) || 0));
+        var predCx = predLeft + noW / 2;
+        var predCy = predTop + noH / 2;
+        var yesCx = yesRect.left + yesRect.width / 2;
+        var yesCy = yesRect.top + yesRect.height / 2;
+        if (Math.hypot(predCx - yesCx, predCy - yesCy) < 70) {
+          ox += (predCx - yesCx) * 0.8 || 40;
+          oy += (predCy - yesCy) * 0.8 || 30;
+          ox = Math.max(-maxX, Math.min(maxX, ox));
+          oy = Math.max(-maxY, Math.min(maxY, oy));
+        }
+
+        btnNo.dataset.ox = String(ox);
+        btnNo.dataset.oy = String(oy);
+        btnNo.style.transform = "translate(" + ox + "px, " + oy + "px)";
+
+        scheduleHome();
+      }
+
+      function pointerPos(e) {
+        if (e.touches && e.touches[0]) {
+          return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+      }
+
+      btnNo.addEventListener("mouseenter", function (e) {
+        var p = pointerPos(e);
+        fleeFrom(p.x, p.y);
+      });
+
+      btnNo.addEventListener("mousemove", function (e) {
+        var p = pointerPos(e);
+        var rect = btnNo.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        if (Math.hypot(p.x - cx, p.y - cy) < 48) {
+          fleeFrom(p.x, p.y);
+        }
+      });
+
+      btnNo.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        var p = pointerPos(e);
+        fleeFrom(p.x, p.y);
+      });
+
+      btnNo.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        var p = pointerPos(e);
+        fleeFrom(p.x, p.y);
+      }, { passive: false });
+
+      btnNo.addEventListener("click", function (e) {
+        e.preventDefault();
+        var p = pointerPos(e);
+        fleeFrom(p.x, p.y);
+      });
+
+      btnNo.addEventListener("focus", function () {
+        btnYes.focus();
+        fleeFrom(
+          btnNo.getBoundingClientRect().left,
+          btnNo.getBoundingClientRect().top
+        );
+      });
+
+      // Si le curseur s’éloigne vraiment, rentrer plus vite
+      document.addEventListener("mousemove", function (e) {
+        if (!opened || !chasing) return;
+        var rect = btnNo.getBoundingClientRect();
+        var dist = Math.hypot(
+          e.clientX - (rect.left + rect.width / 2),
+          e.clientY - (rect.top + rect.height / 2)
+        );
+        if (dist > 120) scheduleHome();
+      });
+
+      function spawnHearts() {
+        for (var i = 0; i < 18; i++) {
+          var h = document.createElement("span");
+          h.className = "heart";
+          h.textContent = "♥";
+          h.style.left = Math.random() * 100 + "%";
+          h.style.animationDelay = Math.random() * 2.4 + "s";
+          h.style.animationDuration = 2.8 + Math.random() * 2.2 + "s";
+          h.style.fontSize = 0.7 + Math.random() * 1.1 + "rem";
+          h.style.color = ["#e8a090", "#c45c4a", "#f0c8b0", "#d4786a"][i % 4];
+          hearts.appendChild(h);
+        }
+      }
+
+      btnYes.addEventListener("click", function () {
+        clearTimeout(homeTimer);
+        btnNo.style.display = "none";
+        success.hidden = false;
+        requestAnimationFrame(function () {
+          success.classList.add("show");
+        });
+        spawnHearts();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parcours candidature → lettre</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #e8e8e8;
+      font-family: "Times New Roman", Times, Georgia, serif;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 297mm;
+      min-height: 210mm;
+      margin: 0 auto;
+      background: #fff;
+      border: 1.5px solid #000;
+      padding: 10px 12px 8px;
+    }
+
+    .header { text-align: center; margin-bottom: 6px; }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .doc-icon {
+      width: 22px;
+      height: 26px;
+      border: 1.5px solid #000;
+      border-radius: 2px;
+      position: relative;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .doc-icon::before {
+      content: "";
+      position: absolute;
+      top: 0; right: 0;
+      width: 7px; height: 7px;
+      border-left: 1.5px solid #000;
+      border-bottom: 1.5px solid #000;
+      background: #fff;
+    }
+
+    .doc-icon::after {
+      content: "";
+      position: absolute;
+      left: 4px; right: 4px; top: 11px;
+      height: 1px;
+      box-shadow: 0 3px 0 #000, 0 6px 0 #000, 0 9px 0 #000;
+      background: #000;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 2px 0 8px;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .top-fields {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 4px 18px;
+      text-align: left;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .top-fields.row2 {
+      grid-template-columns: 1.1fr 0.55fr 0.55fr 1.4fr;
+    }
+
+    .field {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .field .line {
+      flex: 1;
+      border-bottom: 1px solid #000;
+      min-height: 14px;
+      min-width: 40px;
+      font-size: 10px;
+      padding: 0 2px;
+      white-space: normal;
+    }
+
+    .header-rule {
+      border: none;
+      border-top: 1px solid #000;
+      margin: 6px 0 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .section {
+      border: 1px solid #000;
+      padding: 5px 6px 4px;
+      font-size: 9.5px;
+      line-height: 1.25;
+    }
+
+    .section h2 {
+      margin: 0 0 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .q { margin: 0 0 3px; }
+
+    .fill {
+      display: block;
+      border-bottom: 1px solid #000;
+      min-height: 13px;
+      margin: 1px 0 3px;
+      width: 100%;
+      font-size: 9px;
+      padding: 0 2px;
+      line-height: 1.3;
+    }
+
+    .fill.double { margin-top: 2px; }
+
+    .checks { margin: 1px 0 2px 2px; }
+
+    .checks label {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      margin: 1px 0;
+    }
+
+    .checks.cols-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 8px;
+    }
+
+    .box {
+      width: 9px;
+      height: 9px;
+      border: 1px solid #000;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      background: #fff;
+      font-size: 8px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .box.on::before { content: "✓"; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+    }
+
+    .friends-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2px 0 4px;
+      font-size: 9px;
+    }
+
+    .friends-table th,
+    .friends-table td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      height: 16px;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .friends-table th {
+      font-weight: 700;
+      background: #f7f7f7;
+    }
+
+    .dest-list {
+      margin: 2px 0 4px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .dest-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin: 1px 0;
+    }
+
+    .dest-list .fill { flex: 1; margin: 0; }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 6px;
+    }
+
+    .declare-text { margin: 0 0 4px; font-size: 9.5px; }
+
+    .declare-text .inline-line {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      min-width: 140px;
+      padding: 0 3px;
+      font-size: 9.5px;
+    }
+
+    .sig-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 9.5px;
+    }
+
+    .notes-lines .fill { margin: 4px 0 0; min-height: 13px; }
+
+    .italic { font-style: italic; }
+
+    /* —— Zone interactive petite amie —— */
+    .gf-banner {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 0 auto 10px;
+      max-width: 297mm;
+      padding: 10px 14px;
+      border: 1.5px solid #000;
+      background: #fff8f0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 13px;
+    }
+
+    .gf-banner.show { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    .gf-banner strong { font-size: 14px; }
+
+    .gf-banner .hint { font-size: 11px; font-style: italic; color: #444; }
+
+    .gf-section {
+      background: #fffdf8;
+      border: 2px solid #000;
+      position: relative;
+    }
+
+    .gf-section h2 { font-size: 11px !important; }
+
+    .gf-badge {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      padding: 4px 10px;
+      border: 2px solid #000;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      transform: rotate(-6deg);
+      background: #fff;
+    }
+
+    .gf-badge.show { display: block; }
+
+    .gf-badge.approved { border-color: #1a7a3a; color: #1a7a3a; }
+    .gf-badge.conditions { border-color: #b36b00; color: #b36b00; }
+    .gf-badge.investigate { border-color: #1a4d8c; color: #1a4d8c; }
+    .gf-badge.suspect { border-color: #8b1a1a; color: #8b1a1a; }
+
+    .gf-checks label {
+      cursor: pointer;
+      padding: 3px 4px;
+      border-radius: 2px;
+      user-select: none;
+    }
+
+    .gf-checks label:hover { background: #f3ebe0; }
+
+    .gf-checks input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .gf-checks .box {
+      width: 12px;
+      height: 12px;
+      cursor: pointer;
+    }
+
+    .gf-checks label:has(input:checked) .box::before { content: "✓"; }
+    .gf-checks label:has(input:checked) { background: #f0e6d8; font-weight: 700; }
+
+    .gf-notes {
+      width: 100%;
+      min-height: 72px;
+      margin-top: 4px;
+      padding: 6px 8px;
+      border: 1px solid #000;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 11px;
+      line-height: 1.35;
+      resize: vertical;
+      background: #fff;
+    }
+
+    .gf-notes:focus {
+      outline: 2px solid #c45c26;
+      outline-offset: 1px;
+    }
+
+    .gf-meta {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 10px;
+    }
+
+    .gf-meta label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-weight: 700;
+    }
+
+    .gf-meta input {
+      border: none;
+      border-bottom: 1px solid #000;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 11px;
+      padding: 2px 4px;
+      background: transparent;
+    }
+
+    .gf-meta input:focus {
+      outline: none;
+      background: #fff8f0;
+    }
+
+    .gf-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .gf-actions button {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 11px;
+      padding: 6px 12px;
+      border: 1.5px solid #000;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .gf-actions button.primary {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    .gf-actions button:hover { background: #f3ebe0; color: #000; }
+    .gf-actions button.primary:hover { background: #333; color: #fff; }
+
+    .gf-actions button.validate {
+      background: #2f6b4f;
+      color: #fff;
+      border-color: #1e4634;
+      font-weight: 700;
+    }
+
+    .gf-actions button.validate:hover {
+      background: #245640;
+      color: #fff;
+    }
+
+    .gf-status {
+      margin-top: 6px;
+      font-size: 10px;
+      font-style: italic;
+      min-height: 14px;
+      color: #333;
+    }
+
+    .gf-status.ok { color: #1a7a3a; font-style: normal; font-weight: 700; }
+    .gf-status.err { color: #8b1a1a; font-style: normal; font-weight: 700; }
+
+    .gf-redirect {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px dashed #2f6b4f;
+      background: #f3faf6;
+      font-size: 10px;
+      display: none;
+    }
+
+    .gf-redirect.show { display: block; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page {
+        width: auto;
+        min-height: auto;
+        border: 1.5px solid #000;
+        margin: 0;
+        page-break-inside: avoid;
+      }
+      .gf-banner,
+      .gf-actions,
+      .gf-status { display: none !important; }
+      .gf-notes {
+        border: none;
+        border-bottom: 1px solid #000;
+        resize: none;
+        min-height: 40px;
+        padding: 0 2px;
+        background: transparent;
+      }
+      .gf-meta input {
+        border: none;
+        border-bottom: 1px solid #000;
+      }
+      .gf-section { background: #fff; }
+    }
+
+    @media screen and (max-width: 1100px) {
+      body { padding: 8px; }
+      .page { width: 100%; overflow-x: auto; }
+      .grid, .footer, .top-fields, .top-fields.row2 { min-width: 980px; }
+      .gf-banner { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gf-banner show" id="gfBanner">
+    <div>
+      <strong>👑 Parcours : formulaire → lettre</strong>
+      <div class="hint">Choisis Approuvé (ou avec conditions), signe, puis « Valider &amp; ouvrir la lettre ».</div>
+    </div>
+    <div class="gf-actions" style="margin:0;">
+      <button type="button" class="primary" id="btnJumpGf">Aller à mon verdict →</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <header class="header">
+      <div class="title-row">
+        <span class="doc-icon" aria-hidden="true"></span>
+        <h1>Formulaire de candidature petit ami™</h1>
+      </div>
+      <p class="subtitle">
+        « Pour l’assurance qualité, l’audit émotionnel et la planification du soft-life. » 💖🧐🤵
+      </p>
+
+      <div class="top-fields">
+        <div class="field">Nom du candidat : <span class="line">Bradley Ngonde Shadai</span></div>
+        <div class="field">Date de dépôt : <span class="line">01/08/2026</span></div>
+      </div>
+      <div class="top-fields row2">
+        <div class="field">Surnom(s) : <span class="line">BradGpt</span></div>
+        <div class="field">Âge : <span class="line">22 ans</span></div>
+        <div class="field">Taille : <span class="line" style="font-size:8px;">Ça fait longtemps que je ne me suis pas fait mesurer</span></div>
+        <div class="field">Goût snack d’urgence : <span class="line" style="font-size:8px;">Chawarma Tonton Mechack</span></div>
+      </div>
+    </header>
+
+    <hr class="header-rule" />
+
+    <main class="grid">
+      <!-- A -->
+      <section class="section">
+        <h2>Section A : Identification de base 🕵️‍♂️</h2>
+        <div class="q"><span class="q-num">1.</span> Nom complet (état civil) :</div>
+        <span class="fill">Bradley Ngonde Shadai (célibataire)</span>
+        <div class="q"><span class="q-num">2.</span> Liste tous les noms que ta mère te donne quand elle est en colère :</div>
+        <span class="fill">Pas de changement de nom</span>
+        <div class="q"><span class="q-num">3.</span> Ville / lieu d’origine :</div>
+        <span class="fill">Kinshasa</span>
+
+        <div class="two-col">
+          <div>
+            <div class="q"><span class="q-num">4.</span> Est-ce que tu ronfles ?</div>
+            <div class="checks">
+              <label><span class="box"></span> Oui</label>
+              <label><span class="box on"></span> Non</label>
+              <label><span class="box"></span> Je nie toutes les accusations</label>
+            </div>
+          </div>
+          <div>
+            <div class="q"><span class="q-num">5.</span> Statut relationnel avant cette candidature :</div>
+            <div class="checks">
+              <label><span class="box on"></span> Célibataire</label>
+              <label><span class="box"></span> Survivant de situationship</label>
+              <label><span class="box"></span> Brise-cœur en convalescence</label>
+              <label><span class="box"></span> Information classifiée</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="q"><span class="q-num">6.</span> Quelles sont tes 3 principales langages de l’amour ?</div>
+        <div class="checks cols-2">
+          <label><span class="box on"></span> Nourriture</label>
+          <label><span class="box"></span> Temps de qualité</label>
+          <label><span class="box on"></span> Contact physique</label>
+          <label><span class="box on"></span> Paroles d’affirmation</label>
+          <label><span class="box"></span> Argent</label>
+          <label><span class="box"></span> Envoyer des mèmes à 2h du matin</label>
+        </div>
+      </section>
+
+      <!-- B -->
+      <section class="section">
+        <h2>Section B : Contexte familial 👨‍👩‍👧</h2>
+        <div class="q"><span class="q-num">1.</span> Nom complet du père :</div>
+        <span class="fill">Confidentiel</span>
+        <div class="q"><span class="q-num">2.</span> Nom complet de la mère :</div>
+        <span class="fill">Confidentiel</span>
+        <div class="q"><span class="q-num">3.</span> Nombre de frères et sœurs :</div>
+        <span class="fill">Confidentiel</span>
+        <div class="q"><span class="q-num">4.</span> Quel frère/sœur crée le plus de drama ? Explique avec précaution.</div>
+        <span class="fill">Confidentiel</span>
+        <span class="fill double"></span>
+
+        <div class="q"><span class="q-num">5.</span> À quel parent ressembles-tu le plus ?</div>
+        <div class="checks">
+          <label><span class="box"></span> Maman</label>
+          <label><span class="box"></span> Papa</label>
+          <label><span class="box"></span> Admin du WhatsApp familial</label>
+        </div>
+        <span class="fill">Réponse : fusion des deux</span>
+
+        <div class="q"><span class="q-num">6.</span> Décris ta famille en 3 mots :</div>
+        <span class="fill">Indescriptible</span>
+
+        <div class="q"><span class="q-num">7.</span> Si j’assiste à une réunion de famille, à quoi dois-je me préparer ?</div>
+        <div class="checks">
+          <label><span class="box"></span> Tantes bruyantes</label>
+          <label><span class="box"></span> Nourriture sans fin</label>
+          <label><span class="box"></span> Questions mariage surprises</label>
+          <label><span class="box"></span> Compétition de danse familiale</label>
+          <label><span class="box"></span> Marathon de prière</label>
+        </div>
+        <span class="fill italic">Réponse : ABR (aucune bonne réponse)</span>
+      </section>
+
+      <!-- C -->
+      <section class="section">
+        <h2>Section C : Amitié &amp; vie sociale 🍻🍂</h2>
+        <div class="q"><span class="q-num">1.</span> Cite tes amis les plus proches et ce qu’ils apportent à la société :</div>
+        <table class="friends-table">
+          <thead>
+            <tr>
+              <th>Nom de l’ami</th>
+              <th>Leur vibe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Confidentiel</td><td>Confidentiel</td></tr>
+            <tr><td>Confidentiel</td><td>Confidentiel</td></tr>
+            <tr><td>&nbsp;</td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="q"><span class="q-num">2.</span> Quel ami est la mauvaise influence ?</div>
+        <span class="fill">Confidentiel</span>
+
+        <div class="q"><span class="q-num">3.</span> Tes amis savent-ils que tu sors avec une reine ?</div>
+        <div class="checks">
+          <label><span class="box on"></span> Non, je ne pense pas qu’ils le sachent — et pour le moment, non</label>
+          <label><span class="box"></span> Absolument</label>
+          <label><span class="box"></span> Ils vont bientôt l’apprendre</label>
+        </div>
+
+        <div class="q"><span class="q-num">4.</span> Qui connaît tes secrets les plus profonds ?</div>
+        <span class="fill">Pas beaucoup</span>
+      </section>
+
+      <!-- D -->
+      <section class="section">
+        <h2>Section D : Rêves, objectifs &amp; aspirations 🚀</h2>
+        <div class="q"><span class="q-num">1.</span> Quel est ton plus grand rêve dans la vie ?</div>
+        <span class="fill italic">Section à y réfléchir</span>
+        <div class="q"><span class="q-num">2.</span> Quelle vie veux-tu dans 10 ans ?</div>
+        <span class="fill italic">Section à y réfléchir</span>
+        <div class="q"><span class="q-num">3.</span> Qu’est-ce qui te motive quand la vie devient difficile ?</div>
+        <span class="fill italic">Section à y réfléchir</span>
+        <div class="q"><span class="q-num">4.</span> Quel héritage veux-tu laisser derrière toi ?</div>
+        <span class="fill italic">Section à y réfléchir</span>
+
+        <div class="q"><span class="q-num">5.</span> Décris brièvement ta future maison :</div>
+        <div class="checks cols-2">
+          <label><span class="box"></span> Villa / mansion</label>
+          <label><span class="box"></span> Maison en bord de mer</label>
+          <label><span class="box"></span> Maison à la campagne</label>
+          <label><span class="box"></span> N’importe où avec paix et nourriture <span class="italic">(en réflexion)</span></label>
+        </div>
+      </section>
+
+      <!-- E -->
+      <section class="section">
+        <h2>Section E : Enquête amour &amp; relation ❤️🔍</h2>
+        <div class="q"><span class="q-num">1.</span> Qu’est-ce qui a éveillé ton intérêt pour moi ?</div>
+        <span class="fill">Ton intelligence, ta bonne conscience, ton amour pour les mangas, ton amour pour Dieu</span>
+        <div class="q"><span class="q-num">2.</span> Quel est ton plus gros green flag ?</div>
+        <span class="fill">Je ne sais pas trop hein</span>
+        <div class="q"><span class="q-num">3.</span> Plus gros red flag sur lequel tu travailles ?</div>
+        <span class="fill">Faire l’effort de ne pas trop m’en foutre de ce que les gens penseront de moi</span>
+
+        <div class="q"><span class="q-num">4.</span> Comment gères-tu les conflits ?</div>
+        <div class="checks">
+          <label><span class="box on"></span> Communiquer calmement</label>
+          <label><span class="box"></span> Se taire comme un méchant Netflix</label>
+          <label><span class="box"></span> Acheter à manger et s’excuser</label>
+          <label><span class="box"></span> Besoin de 2 jours ouvrés pour digérer</label>
+        </div>
+
+        <div class="q"><span class="q-num">5.</span> Quel est ton rendez-vous idéal ?</div>
+        <span class="fill">Je n’ai pas de préférence</span>
+        <div class="q"><span class="q-num">6.</span> Définis la loyauté avec tes propres mots :</div>
+        <span class="fill">La loyauté, c’est choisir chaque jour d’être vrai, présent et respectueux — même quand c’est inconfortable.</span>
+        <span class="fill double">C’est protéger la confiance, tenir sa parole, et rester un allié sûr, surtout dans les moments difficiles.</span>
+
+        <div class="q"><span class="q-num">7.</span> Es-tu romantique naturellement ou de force ?</div>
+        <div class="checks cols-2">
+          <label><span class="box"></span> Naturellement</label>
+          <label><span class="box"></span> Par la prière</label>
+          <label><span class="box on"></span> Encore en construction — jamais vraiment eu l’occasion</label>
+        </div>
+      </section>
+
+      <!-- F -->
+      <section class="section">
+        <h2>Section F : Valeurs &amp; convictions 🌍✨</h2>
+        <div class="q"><span class="q-num">1.</span> Quelles valeurs sont non négociables pour toi ?</div>
+        <span class="fill">Pas de sexe avant le mariage</span>
+        <span class="fill double"></span>
+        <div class="q"><span class="q-num">2.</span> Qu’est-ce qui, selon toi, fait durer une relation ?</div>
+        <span class="fill">La communication, et le renouvellement de l’amour par des actes qui le ravivent</span>
+        <span class="fill double"></span>
+        <div class="q"><span class="q-num">3.</span> Que signifie le succès pour toi ?</div>
+        <span class="fill">Le succès, c’est avancer avec Dieu, servir utilement, et construire une vie stable où ceux que j’aime</span>
+        <span class="fill double">peuvent compter sur moi — pas seulement accumuler, mais devenir quelqu’un de fiable et de bienveillant.</span>
+        <div class="q"><span class="q-num">4.</span> Es-tu spirituel / religieux ? Explique brièvement :</div>
+        <span class="fill">Je crois fortement en Dieu</span>
+        <div class="q"><span class="q-num">5.</span> Quel type de père / mari espères-tu devenir un jour ?</div>
+        <span class="fill">Un proche de ses enfants, en qui ils ont confiance</span>
+      </section>
+
+      <!-- G -->
+      <section class="section">
+        <h2>Section G : Argent &amp; affaires 💼💰</h2>
+        <div class="q"><span class="q-num">1.</span> Quelle est ton idée de business de rêve ?</div>
+        <span class="fill italic">En cours de réflexion</span>
+        <div class="q"><span class="q-num">2.</span> Si tu recevais 1 million £ aujourd’hui, quelle serait ta première action ?</div>
+        <span class="fill italic">En cours de réflexion</span>
+
+        <div class="q"><span class="q-num">3.</span> Es-tu plutôt épargnant ou dépensier ?</div>
+        <div class="checks">
+          <label><span class="box"></span> Épargnant</label>
+          <label><span class="box"></span> Dépensier</label>
+          <label><span class="box on"></span> Coach motivation « l’argent va et vient »</label>
+        </div>
+
+        <div class="q"><span class="q-num">4.</span> Red flags financiers que tu ne tolères pas :</div>
+        <span class="fill">Acheter un bonbon à 1 000 000 $</span>
+      </section>
+
+      <!-- H -->
+      <section class="section">
+        <h2>Section H : Vacances de rêve ✈️🌴</h2>
+        <div class="q"><span class="q-num">1.</span> Top 5 destinations de rêve :</div>
+        <ul class="dest-list">
+          <li>1. <span class="fill">Japon</span></li>
+          <li>2. <span class="fill">Corée du Sud</span></li>
+          <li>3. <span class="fill">France (Paris)</span></li>
+          <li>4. <span class="fill">Hawaï</span></li>
+          <li>5. <span class="fill">Canada</span></li>
+        </ul>
+
+        <div class="q"><span class="q-num">2.</span> Personnalité en vacances :</div>
+        <div class="checks">
+          <label><span class="box on"></span> Explorateur d’aventure</label>
+          <label><span class="box"></span> Ambassadeur soft life de luxe</label>
+          <label><span class="box"></span> Dormir et manger en professionnel</label>
+          <label><span class="box"></span> Créateur de contenu en mission</label>
+        </div>
+
+        <div class="q"><span class="q-num">3.</span> Survivrais-tu à un road trip de couple sans t’énerver ?</div>
+        <div class="checks">
+          <label><span class="box"></span> Oui</label>
+          <label><span class="box"></span> Non</label>
+          <label><span class="box on"></span> Ça dépend du contrôle de la playlist</label>
+        </div>
+      </section>
+
+      <!-- I -->
+      <section class="section">
+        <h2>Section I : Questions random mais importantes 🌚</h2>
+        <div class="q"><span class="q-num">1.</span> Sais-tu cuisiner ?</div>
+        <div class="checks">
+          <label><span class="box"></span> Oui</label>
+          <label><span class="box"></span> Non</label>
+          <label><span class="box on"></span> Je sais faire bouillir de l’eau avec confiance</label>
+        </div>
+
+        <div class="q"><span class="q-num">2.</span> Quel plat défendrais-tu de ta vie ?</div>
+        <span class="fill">Makemba</span>
+        <div class="q"><span class="q-num">3.</span> Quel est ton moment le plus embarrassant ?</div>
+        <span class="fill">Difficile à dire</span>
+        <div class="q"><span class="q-num">4.</span> Quelle chanson décrit ta vie actuellement ?</div>
+        <span class="fill italic">Non renseigné</span>
+
+        <div class="q"><span class="q-num">5.</span> M’as-tu déjà stalkée en ligne ? Sois honnête.</div>
+        <div class="checks">
+          <label><span class="box"></span> Oui</label>
+          <label><span class="box"></span> Non</label>
+          <label><span class="box on"></span> Préfère ne pas répondre pour raisons légales</label>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <section class="section">
+        <h2>Déclaration finale 📜</h2>
+        <p class="declare-text">
+          Je, <span class="inline-line">Bradley Ngonde Shadai</span>, confirme par la présente que toutes les informations fournies ci-dessus sont vraies et exactes au mieux de ma connaissance. J’assume les réponses marquées « confidentiel » ou « à réfléchir » comme relevant du respect de la vie privée et d’une sincérité en cours de construction. Tout mensonge découvert ultérieurement pourra entraîner :
+        </p>
+        <div class="checks cols-2">
+          <label><span class="box"></span> Interrogatoire excessif</label>
+          <label><span class="box"></span> Suspension temporaire des câlins</label>
+          <label><span class="box on"></span> Punition du regard en coin</label>
+          <label><span class="box"></span> Tribunal relationnel immédiat</label>
+        </div>
+        <div class="sig-row">
+          <div class="field">Signature : <span class="line">Bradley Ngonde Shadai</span></div>
+          <div class="field">Date : <span class="line">01/08/2026</span></div>
+        </div>
+      </section>
+
+      <section class="section gf-section" id="gfOfficial">
+        <span class="gf-badge" id="gfBadge" aria-hidden="true"></span>
+        <h2>Réservé à l’usage officiel de la petite amie 👑</h2>
+        <p class="hint" style="margin:0 0 6px;font-size:9px;font-style:italic;">Clique pour choisir une décision (une seule) :</p>
+        <div class="checks cols-2 gf-checks" id="gfDecision">
+          <label>
+            <input type="radio" name="gf_decision" value="approved" />
+            <span class="box"></span> Approuvé
+          </label>
+          <label>
+            <input type="radio" name="gf_decision" value="investigate" />
+            <span class="box"></span> Nécessite une enquête plus poussée
+          </label>
+          <label>
+            <input type="radio" name="gf_decision" value="conditions" />
+            <span class="box"></span> Approuvé avec conditions
+          </label>
+          <label>
+            <input type="radio" name="gf_decision" value="suspect" />
+            <span class="box"></span> Beau gosse mais suspect
+          </label>
+        </div>
+
+        <div class="q" style="margin-top:8px;">Notes de l’intervieweuse :</div>
+        <textarea
+          class="gf-notes"
+          id="gfNotes"
+          placeholder="Écris ici ton avis, tes conditions, tes observations…"
+          maxlength="2000"
+          rows="4"
+        ></textarea>
+
+        <div class="gf-meta">
+          <label>
+            Signature de l’intervieweuse
+            <input type="text" id="gfSignature" placeholder="Ton prénom / signature" maxlength="80" autocomplete="name" />
+          </label>
+          <label>
+            Date du verdict
+            <input type="date" id="gfDate" />
+          </label>
+        </div>
+
+        <div class="gf-actions no-print">
+          <button type="button" class="validate" id="btnValidate">✓ Valider &amp; ouvrir la lettre</button>
+          <button type="button" class="primary" id="btnSave">💾 Enregistrer le verdict</button>
+          <button type="button" id="btnPrint">🖨️ Imprimer / PDF</button>
+          <button type="button" id="btnReset">↺ Effacer mon verdict</button>
+        </div>
+        <div class="gf-status" id="gfStatus" aria-live="polite"></div>
+        <div class="gf-redirect" id="gfRedirect">
+          Verdict accepté. Redirection vers la lettre dans <span id="gfCountdown">3</span> s…
+          <br />
+          <a href="veux_tu_sortir_avec_moi.html" id="gfLetterLink">Continuer maintenant →</a>
+        </div>
+      </section>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var STORAGE_KEY = "candidature_petit_ami_verdict_v1";
+      var PASS_KEY = "candidature_petit_ami_passe_lettre";
+      var LETTER_URL = "veux_tu_sortir_avec_moi.html";
+      var ACCEPT = { approved: true, conditions: true };
+
+      var labels = {
+        approved: "Approuvé",
+        investigate: "Enquête requise",
+        conditions: "Approuvé avec conditions",
+        suspect: "Beau gosse mais suspect"
+      };
+
+      var notes = document.getElementById("gfNotes");
+      var signature = document.getElementById("gfSignature");
+      var dateEl = document.getElementById("gfDate");
+      var statusEl = document.getElementById("gfStatus");
+      var badge = document.getElementById("gfBadge");
+      var redirectBox = document.getElementById("gfRedirect");
+      var countdownEl = document.getElementById("gfCountdown");
+      var radios = document.querySelectorAll('input[name="gf_decision"]');
+      var redirectTimer = null;
+
+      function todayISO() {
+        var d = new Date();
+        var m = String(d.getMonth() + 1).padStart(2, "0");
+        var day = String(d.getDate()).padStart(2, "0");
+        return d.getFullYear() + "-" + m + "-" + day;
+      }
+
+      function getDecision() {
+        var checked = document.querySelector('input[name="gf_decision"]:checked');
+        return checked ? checked.value : "";
+      }
+
+      function setDecision(value) {
+        radios.forEach(function (r) {
+          r.checked = r.value === value;
+        });
+      }
+
+      function updateBadge() {
+        var value = getDecision();
+        badge.className = "gf-badge";
+        if (!value) {
+          badge.textContent = "";
+          return;
+        }
+        badge.textContent = labels[value] || value;
+        badge.classList.add("show", value);
+      }
+
+      function collect() {
+        return {
+          decision: getDecision(),
+          notes: notes.value.trim(),
+          signature: signature.value.trim(),
+          date: dateEl.value || todayISO(),
+          savedAt: new Date().toISOString()
+        };
+      }
+
+      function apply(data) {
+        if (!data) return;
+        setDecision(data.decision || "");
+        notes.value = data.notes || "";
+        signature.value = data.signature || "";
+        dateEl.value = data.date || "";
+        updateBadge();
+      }
+
+      function save(showMsg) {
+        var data = collect();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          statusEl.className = "gf-status err";
+          statusEl.textContent = "Impossible d’enregistrer (navigateur bloqué).";
+          return false;
+        }
+        updateBadge();
+        if (showMsg !== false) {
+          statusEl.className = "gf-status ok";
+          var label = data.decision ? labels[data.decision] : "sans décision";
+          statusEl.textContent = "Verdict enregistré (" + label + ") — " + new Date().toLocaleString("fr-FR");
+        }
+        return true;
+      }
+
+      function load() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            if (!dateEl.value) dateEl.value = todayISO();
+            return;
+          }
+          apply(JSON.parse(raw));
+          statusEl.className = "gf-status";
+          statusEl.textContent = "Verdict précédent restauré sur cet appareil.";
+        } catch (e) {
+          if (!dateEl.value) dateEl.value = todayISO();
+        }
+      }
+
+      function reset() {
+        if (!confirm("Effacer le verdict de la petite amie sur cet appareil ?")) return;
+        clearTimeout(redirectTimer);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(PASS_KEY);
+        setDecision("");
+        notes.value = "";
+        signature.value = "";
+        dateEl.value = todayISO();
+        updateBadge();
+        redirectBox.classList.remove("show");
+        statusEl.className = "gf-status";
+        statusEl.textContent = "Verdict effacé.";
+      }
+
+      function validateAndGo() {
+        var data = collect();
+        if (!data.decision) {
+          statusEl.className = "gf-status err";
+          statusEl.textContent = "Choisis d’abord une décision.";
+          return;
+        }
+        if (!ACCEPT[data.decision]) {
+          statusEl.className = "gf-status err";
+          statusEl.textContent = "Pour ouvrir la lettre, il faut « Approuvé » ou « Approuvé avec conditions ».";
+          return;
+        }
+        if (!data.signature) {
+          statusEl.className = "gf-status err";
+          statusEl.textContent = "Signe d’abord (prénom / signature de l’intervieweuse).";
+          signature.focus();
+          return;
+        }
+
+        if (!save(false)) return;
+
+        try {
+          localStorage.setItem(PASS_KEY, JSON.stringify({
+            ok: true,
+            decision: data.decision,
+            signature: data.signature,
+            at: new Date().toISOString()
+          }));
+        } catch (e) {}
+
+        statusEl.className = "gf-status ok";
+        statusEl.textContent = "Formulaire validé. Préparation de la lettre…";
+        redirectBox.classList.add("show");
+
+        var left = 3;
+        countdownEl.textContent = String(left);
+        clearInterval(redirectTimer);
+        redirectTimer = setInterval(function () {
+          left -= 1;
+          countdownEl.textContent = String(left);
+          if (left <= 0) {
+            clearInterval(redirectTimer);
+            window.location.href = LETTER_URL;
+          }
+        }, 1000);
+      }
+
+      document.getElementById("btnValidate").addEventListener("click", validateAndGo);
+      document.getElementById("btnSave").addEventListener("click", function () {
+        save(true);
+      });
+      document.getElementById("btnPrint").addEventListener("click", function () {
+        save(false);
+        window.print();
+      });
+      document.getElementById("btnReset").addEventListener("click", reset);
+      document.getElementById("btnJumpGf").addEventListener("click", function () {
+        document.getElementById("gfOfficial").scrollIntoView({ behavior: "smooth", block: "center" });
+        notes.focus();
+      });
+
+      radios.forEach(function (r) {
+        r.addEventListener("change", function () {
+          updateBadge();
+          save(false);
+          statusEl.className = "gf-status ok";
+          statusEl.textContent = "Décision sélectionnée : " + (labels[r.value] || r.value);
+        });
+      });
+
+      var autosaveTimer;
+      function scheduleAutosave() {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(function () {
+          save(false);
+          statusEl.className = "gf-status";
+          statusEl.textContent = "Brouillon auto-enregistré…";
+        }, 500);
+      }
+
+      notes.addEventListener("input", scheduleAutosave);
+      signature.addEventListener("input", scheduleAutosave);
+      dateEl.addEventListener("change", scheduleAutosave);
+
+      load();
+    })();
+  </script>
+</body>
+</html>
