@@ -868,6 +868,13 @@
           <br />
           <a href="veux_tu_sortir_avec_moi.html" id="gfLetterLink">Continuer maintenant →</a>
         </div>
+        <div class="gf-redirect" id="gfMailHelp" style="border-color:#8b1a1a;background:#fff5f5;">
+          <strong>E-mail en attente d’activation</strong><br />
+          Bradley doit ouvrir <em>bradley.ngonde3@gmail.com</em> (et les spams), cliquer sur
+          <strong>« Activate Form » / Activer</strong> dans le mail FormSubmit, puis tu revalides.
+          <br /><br />
+          <button type="button" class="primary" id="btnContinueAnyway">Continuer vers la lettre quand même →</button>
+        </div>
       </section>
     </footer>
   </div>
@@ -878,9 +885,14 @@
       var PASS_KEY = "candidature_petit_ami_passe_lettre";
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
-      // Même logique que le projet L3 (mail transactionnel) adaptée au site statique :
-      // FormSubmit → Gmail bradley.ngonde3@gmail.com (sans exposer le mot de passe SMTP).
-      var MAIL_ENDPOINT = "https://formsubmit.co/ajax/bradley.ngonde3@gmail.com";
+      /**
+       * Envoi e-mail (comme le mail transactionnel du projet L3) :
+       * 1) Google Apps Script + Gmail (fiable) — colle l’URL après déploiement du fichier envoyer_verdict_gmail.gs
+       * 2) Sinon FormSubmit (gratuit) — nécessite d’activer le lien reçu par e-mail (vérifie les spams)
+       */
+      var APPS_SCRIPT_URL = ""; // ex: "https://script.google.com/macros/s/XXXX/exec"
+      var FORMSUBMIT_EMAIL = "bradley.ngonde3@gmail.com";
+      var MAIL_ENDPOINT = "https://formsubmit.co/ajax/" + FORMSUBMIT_EMAIL;
 
       var labels = {
         approved: "Approuvé",
@@ -897,10 +909,12 @@
       var statusEl = document.getElementById("gfStatus");
       var badge = document.getElementById("gfBadge");
       var redirectBox = document.getElementById("gfRedirect");
+      var mailHelpBox = document.getElementById("gfMailHelp");
       var countdownEl = document.getElementById("gfCountdown");
       var btnValidate = document.getElementById("btnValidate");
       var radios = document.querySelectorAll('input[name="gf_decision"]');
       var redirectTimer = null;
+      var pendingPass = null;
 
       function todayISO() {
         var d = new Date();
@@ -1007,11 +1021,13 @@
         updateBadge();
         toggleConditions();
         redirectBox.classList.remove("show");
+        mailHelpBox.classList.remove("show");
         statusEl.className = "gf-status";
         statusEl.textContent = "Verdict effacé.";
       }
 
       function startRedirect() {
+        mailHelpBox.classList.remove("show");
         statusEl.className = "gf-status ok";
         statusEl.textContent = "Formulaire validé. Préparation de la lettre…";
         redirectBox.classList.add("show");
@@ -1029,11 +1045,12 @@
         }, 1000);
       }
 
-      function sendEmail(data) {
-        var payload = {
+      function buildPayload(data) {
+        return {
           _subject: "Verdict candidature petit ami — " + (labels[data.decision] || data.decision),
           _template: "table",
           _captcha: "false",
+          _honey: "",
           Candidat: "Bradley Ngonde Shadai (BradGpt)",
           Decision: labels[data.decision] || data.decision,
           Conditions: data.conditions || "(aucune — approuvé sans conditions)",
@@ -1042,7 +1059,27 @@
           Date_verdict: data.date,
           Heure_soumission: new Date().toLocaleString("fr-FR")
         };
+      }
 
+      function sendViaAppsScript(payload) {
+        return fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          // text/plain évite le blocage CORS vers Google Apps Script
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        }).then(function (res) {
+          return res.text().then(function (text) {
+            var json = {};
+            try { json = JSON.parse(text); } catch (e) {}
+            if (!res.ok || json.ok === false) {
+              throw new Error(json.message || ("HTTP " + res.status));
+            }
+            return { channel: "apps-script", json: json };
+          });
+        });
+      }
+
+      function sendViaFormSubmit(payload) {
         return fetch(MAIL_ENDPOINT, {
           method: "POST",
           headers: {
@@ -1051,9 +1088,34 @@
           },
           body: JSON.stringify(payload)
         }).then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.json().catch(function () { return {}; });
+          return res.json().catch(function () { return {}; }).then(function (json) {
+            var msg = String((json && (json.message || json.success)) || "");
+            var needsActivation = /activat/i.test(msg) || /confirm/i.test(msg);
+            if (!res.ok) throw new Error(msg || ("HTTP " + res.status));
+            return { channel: "formsubmit", json: json, needsActivation: needsActivation, message: msg };
+          });
         });
+      }
+
+      function sendEmail(data) {
+        var payload = buildPayload(data);
+        if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf("http") === 0) {
+          return sendViaAppsScript(payload);
+        }
+        return sendViaFormSubmit(payload);
+      }
+
+      function storePass(data) {
+        pendingPass = {
+          ok: true,
+          decision: data.decision,
+          signature: data.signature,
+          conditions: data.conditions,
+          at: new Date().toISOString()
+        };
+        try {
+          localStorage.setItem(PASS_KEY, JSON.stringify(pendingPass));
+        } catch (e) {}
       }
 
       function validateAndGo() {
@@ -1083,37 +1145,39 @@
         }
 
         if (!save(false)) return;
-
-        try {
-          localStorage.setItem(PASS_KEY, JSON.stringify({
-            ok: true,
-            decision: data.decision,
-            signature: data.signature,
-            conditions: data.conditions,
-            at: new Date().toISOString()
-          }));
-        } catch (e) {}
+        storePass(data);
 
         btnValidate.disabled = true;
+        redirectBox.classList.remove("show");
+        mailHelpBox.classList.remove("show");
         statusEl.className = "gf-status";
         statusEl.textContent = "Envoi du verdict par e-mail…";
 
         sendEmail(data)
-          .then(function () {
+          .then(function (result) {
+            if (result.needsActivation) {
+              statusEl.className = "gf-status err";
+              statusEl.textContent = "FormSubmit demande une activation. Vérifie tes spams (bradley.ngonde3@gmail.com).";
+              mailHelpBox.classList.add("show");
+              return;
+            }
             statusEl.className = "gf-status ok";
             statusEl.textContent = "E-mail envoyé. Ouverture de la lettre…";
             startRedirect();
           })
-          .catch(function () {
+          .catch(function (err) {
             statusEl.className = "gf-status err";
-            statusEl.textContent = "E-mail non envoyé (réseau ou confirmation FormSubmit en attente). La lettre s’ouvre quand même…";
-            startRedirect();
+            statusEl.textContent = "E-mail non reçu pour l’instant (" + (err && err.message ? err.message : "réseau") + ").";
+            mailHelpBox.classList.add("show");
           })
           .finally(function () {
             btnValidate.disabled = false;
           });
       }
 
+      document.getElementById("btnContinueAnyway").addEventListener("click", function () {
+        startRedirect();
+      });
       document.getElementById("btnValidate").addEventListener("click", validateAndGo);
       document.getElementById("btnSave").addEventListener("click", function () {
         save(true);
