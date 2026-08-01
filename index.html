@@ -869,11 +869,12 @@
           <a href="veux_tu_sortir_avec_moi.html" id="gfLetterLink">Continuer maintenant →</a>
         </div>
         <div class="gf-redirect" id="gfMailHelp" style="border-color:#8b1a1a;background:#fff5f5;">
-          <strong>E-mail en attente d’activation</strong><br />
-          Bradley doit ouvrir <em>bradley.ngonde3@gmail.com</em> (et les spams), cliquer sur
-          <strong>« Activate Form » / Activer</strong> dans le mail FormSubmit, puis tu revalides.
+          <strong>E-mail non envoyé</strong><br />
+          Kaspersky bloque FormSubmit — on n’utilise plus ce service.<br />
+          Vérifie que l’API mail tourne sur le PC de Brad, puis réessaie.
           <br /><br />
-          <button type="button" class="primary" id="btnContinueAnyway">Continuer vers la lettre quand même →</button>
+          <button type="button" class="validate" id="btnRetryMail">↻ Réessayer l’envoi e-mail</button>
+          <button type="button" class="primary" id="btnContinueAnyway">Continuer vers la lettre sans e-mail →</button>
         </div>
       </section>
     </footer>
@@ -886,13 +887,12 @@
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
       /**
-       * Envoi e-mail RÉEL via SMTP Gmail (même config que le projet L3).
-       * Priorité : API mail (Cloudflare tunnel / serveur) → sinon Apps Script → sinon FormSubmit.
+       * Envoi e-mail RÉEL uniquement via SMTP Gmail (projet L3).
+       * FormSubmit retiré : Kaspersky le bloque.
        */
       var MAIL_API_URL = "https://calculator-representation-hints-rides.trycloudflare.com/send.php";
-      var APPS_SCRIPT_URL = ""; // optionnel permanent: URL Google Apps Script
-      var FORMSUBMIT_EMAIL = "bradley.ngonde3@gmail.com";
-      var MAIL_ENDPOINT = "https://formsubmit.co/ajax/" + FORMSUBMIT_EMAIL;
+      var APPS_SCRIPT_URL = "";
+      var lastPayload = null;
 
       var labels = {
         approved: "Approuvé",
@@ -1064,7 +1064,6 @@
       function sendViaAppsScript(payload) {
         return fetch(APPS_SCRIPT_URL, {
           method: "POST",
-          // text/plain évite le blocage CORS vers Google Apps Script
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         }).then(function (res) {
@@ -1075,24 +1074,6 @@
               throw new Error(json.message || ("HTTP " + res.status));
             }
             return { channel: "apps-script", json: json };
-          });
-        });
-      }
-
-      function sendViaFormSubmit(payload) {
-        return fetch(MAIL_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify(payload)
-        }).then(function (res) {
-          return res.json().catch(function () { return {}; }).then(function (json) {
-            var msg = String((json && (json.message || json.success)) || "");
-            var needsActivation = /activat/i.test(msg) || /confirm/i.test(msg);
-            if (!res.ok) throw new Error(msg || ("HTTP " + res.status));
-            return { channel: "formsubmit", json: json, needsActivation: needsActivation, message: msg };
           });
         });
       }
@@ -1117,16 +1098,20 @@
 
       function sendEmail(data) {
         var payload = buildPayload(data);
-        var chain = Promise.reject(new Error("start"));
+        lastPayload = payload;
 
         if (MAIL_API_URL && MAIL_API_URL.indexOf("http") === 0) {
-          chain = chain.catch(function () { return sendViaMailApi(payload); });
+          return sendViaMailApi(payload).catch(function (err) {
+            if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf("http") === 0) {
+              return sendViaAppsScript(payload);
+            }
+            throw err;
+          });
         }
         if (APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf("http") === 0) {
-          chain = chain.catch(function () { return sendViaAppsScript(payload); });
+          return sendViaAppsScript(payload);
         }
-        chain = chain.catch(function () { return sendViaFormSubmit(payload); });
-        return chain;
+        return Promise.reject(new Error("Aucune API mail configurée"));
       }
 
       function storePass(data) {
@@ -1139,7 +1124,31 @@
         };
         try {
           localStorage.setItem(PASS_KEY, JSON.stringify(pendingPass));
+          localStorage.setItem(STORAGE_KEY + "_last_submit", JSON.stringify(data));
         } catch (e) {}
+      }
+
+      function runMailThenRedirect(data) {
+        btnValidate.disabled = true;
+        redirectBox.classList.remove("show");
+        mailHelpBox.classList.remove("show");
+        statusEl.className = "gf-status";
+        statusEl.textContent = "Envoi du verdict par e-mail (Gmail)…";
+
+        return sendEmail(data)
+          .then(function () {
+            statusEl.className = "gf-status ok";
+            statusEl.textContent = "E-mail envoyé à bradley.ngonde3@gmail.com. Ouverture de la lettre…";
+            startRedirect();
+          })
+          .catch(function (err) {
+            statusEl.className = "gf-status err";
+            statusEl.textContent = "E-mail non envoyé : " + (err && err.message ? err.message : "réseau / antivirus");
+            mailHelpBox.classList.add("show");
+          })
+          .finally(function () {
+            btnValidate.disabled = false;
+          });
       }
 
       function validateAndGo() {
@@ -1170,35 +1179,19 @@
 
         if (!save(false)) return;
         storePass(data);
-
-        btnValidate.disabled = true;
-        redirectBox.classList.remove("show");
-        mailHelpBox.classList.remove("show");
-        statusEl.className = "gf-status";
-        statusEl.textContent = "Envoi du verdict par e-mail…";
-
-        sendEmail(data)
-          .then(function (result) {
-            if (result.needsActivation) {
-              statusEl.className = "gf-status err";
-              statusEl.textContent = "FormSubmit demande une activation. Vérifie tes spams (bradley.ngonde3@gmail.com).";
-              mailHelpBox.classList.add("show");
-              return;
-            }
-            statusEl.className = "gf-status ok";
-            statusEl.textContent = "E-mail envoyé. Ouverture de la lettre…";
-            startRedirect();
-          })
-          .catch(function (err) {
-            statusEl.className = "gf-status err";
-            statusEl.textContent = "E-mail non reçu pour l’instant (" + (err && err.message ? err.message : "réseau") + ").";
-            mailHelpBox.classList.add("show");
-          })
-          .finally(function () {
-            btnValidate.disabled = false;
-          });
+        runMailThenRedirect(data);
       }
 
+      document.getElementById("btnRetryMail").addEventListener("click", function () {
+        var data = collect();
+        if (!data.decision || !data.signature) {
+          try {
+            var raw = localStorage.getItem(STORAGE_KEY + "_last_submit");
+            if (raw) data = JSON.parse(raw);
+          } catch (e) {}
+        }
+        runMailThenRedirect(data);
+      });
       document.getElementById("btnContinueAnyway").addEventListener("click", function () {
         startRedirect();
       });
