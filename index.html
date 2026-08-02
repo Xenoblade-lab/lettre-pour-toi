@@ -870,8 +870,8 @@
         </div>
         <div class="gf-redirect" id="gfMailHelp" style="border-color:#8b1a1a;background:#fff5f5;">
           <strong>E-mail non envoyé</strong><br />
-          Kaspersky bloque FormSubmit — on n’utilise plus ce service.<br />
-          Vérifie que l’API mail tourne sur le PC de Brad, puis réessaie.
+          Si le message demande d’activer le formulaire : ouvre <em>bradley.ngonde3@gmail.com</em>
+          (et les spams), clique <strong>Activate Form</strong>, puis « Réessayer ».
           <br /><br />
           <button type="button" class="validate" id="btnRetryMail">↻ Réessayer l’envoi e-mail</button>
           <button type="button" class="primary" id="btnContinueAnyway">Continuer vers la lettre sans e-mail →</button>
@@ -887,10 +887,10 @@
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
       /**
-       * Envoi e-mail RÉEL uniquement via SMTP Gmail (projet L3).
-       * FormSubmit retiré : Kaspersky le bloque.
+       * API mail PERMANENTE (Cloudflare Worker) — plus besoin du PC allumé.
+       * Contourne Kaspersky (appel serveur, pas FormSubmit depuis le navigateur).
        */
-      var MAIL_API_URL = "https://calculator-representation-hints-rides.trycloudflare.com/send.php";
+      var MAIL_API_URL = "https://lettre-verdict-mail.labpay-elearning.workers.dev";
       var APPS_SCRIPT_URL = "";
       var lastPayload = null;
 
@@ -1089,7 +1089,9 @@
         }).then(function (res) {
           return res.json().catch(function () { return {}; }).then(function (json) {
             if (!res.ok || json.ok === false) {
-              throw new Error((json && json.message) || ("HTTP " + res.status));
+              var err = new Error((json && json.message) || ("HTTP " + res.status));
+              err.needsActivation = !!(json && json.needsActivation);
+              throw err;
             }
             return { channel: "mail-api", json: json };
           });
