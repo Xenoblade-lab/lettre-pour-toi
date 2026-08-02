@@ -510,9 +510,74 @@
 
     @media screen and (max-width: 1100px) {
       body { padding: 8px; }
-      .page { width: 100%; overflow-x: auto; }
-      .grid, .footer, .top-fields, .top-fields.row2 { min-width: 980px; }
+      .page {
+        width: 100%;
+        max-width: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+      }
       .gf-banner { max-width: 100%; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .footer { grid-template-columns: 1fr; }
+      .top-fields,
+      .top-fields.row2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .field { white-space: normal; flex-wrap: wrap; }
+      .gf-meta { grid-template-columns: 1fr; }
+      .gf-actions button {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 140px;
+      }
+    }
+
+    @media screen and (max-width: 700px) {
+      body { padding: 6px; }
+      .page { padding: 8px; border-width: 1px; }
+      h1 { font-size: 15px; letter-spacing: 0; }
+      .subtitle { font-size: 10px; }
+      .title-row { flex-wrap: wrap; }
+      .grid,
+      .top-fields,
+      .top-fields.row2,
+      .two-col,
+      .checks.cols-2,
+      .sig-row,
+      .footer {
+        grid-template-columns: 1fr;
+      }
+      .section { font-size: 11px; line-height: 1.4; padding: 8px; }
+      .section h2 { font-size: 11px; }
+      .friends-table { font-size: 10px; display: block; overflow-x: auto; }
+      .gf-banner {
+        font-size: 12px;
+        padding: 10px;
+        position: static;
+      }
+      .gf-banner strong { font-size: 13px; }
+      .gf-banner .hint { font-size: 10px; }
+      .gf-banner .gf-actions { width: 100%; }
+      .gf-banner .gf-actions button { width: 100%; }
+      .gf-notes { font-size: 14px; min-height: 88px; }
+      .gf-meta input { font-size: 14px; padding: 6px 4px; }
+      .gf-actions { gap: 8px; }
+      .gf-actions button {
+        flex: 1 1 100%;
+        width: 100%;
+        font-size: 13px;
+        padding: 10px 12px;
+      }
+      .gf-badge {
+        position: static;
+        display: none;
+        transform: none;
+        margin: 0 0 8px;
+        text-align: center;
+      }
+      .gf-badge.show { display: block; }
+      .gf-status { font-size: 12px; }
+      .gf-redirect { font-size: 12px; }
+      .declare-text .inline-line { min-width: 80px; display: block; margin-top: 4px; }
     }
   </style>
 </head>
@@ -892,8 +957,12 @@
         </div>
         <div class="gf-redirect" id="gfMailHelp" style="border-color:#8b1a1a;background:#fff5f5;">
           <strong>E-mail non envoyé</strong><br />
-          Si le message demande d’activer le formulaire : ouvre <em>bradley.ngonde3@gmail.com</em>
-          (et les spams), clique <strong>Activate Form</strong>, puis « Réessayer ».
+          <span id="gfMailHelpText">
+            Ce n’est <em>pas</em> parce que le PC est éteint (l’API tourne sur Cloudflare).
+            Si tu vois « Rate limit » : FormSubmit a trop reçu d’essais — réessaie plus tard,
+            ou on branche Gmail via Apps Script.
+            Si le message demande d’activer : ouvre <em>bradley.ngonde3@gmail.com</em> (et les spams) → <strong>Activate Form</strong>.
+          </span>
           <br /><br />
           <button type="button" class="validate" id="btnRetryMail">↻ Réessayer l’envoi e-mail</button>
           <button type="button" class="primary" id="btnContinueAnyway">Continuer →</button>
@@ -1122,6 +1191,7 @@
             if (!res.ok || json.ok === false) {
               var err = new Error((json && json.message) || ("HTTP " + res.status));
               err.needsActivation = !!(json && json.needsActivation);
+              err.rateLimited = !!(json && json.rateLimited);
               throw err;
             }
             return { channel: "mail-api", json: json };
@@ -1182,6 +1252,21 @@
           .catch(function (err) {
             statusEl.className = "gf-status err";
             statusEl.textContent = "E-mail non envoyé : " + (err && err.message ? err.message : "réseau / antivirus");
+            var helpText = document.getElementById("gfMailHelpText");
+            if (helpText) {
+              if (err && err.rateLimited) {
+                helpText.innerHTML =
+                  "Cause : <strong>quota FormSubmit dépassé</strong> (trop d’essais). " +
+                  "Ce n’est <em>pas</em> lié à l’extinction du PC — l’API Cloudflare tourne toujours. " +
+                  "Réessaie dans quelques heures, ou déploie <code>envoyer_verdict_gmail.gs</code> pour un envoi Gmail sans limite FormSubmit.";
+              } else if (err && err.needsActivation) {
+                helpText.innerHTML =
+                  "Ouvre <em>bradley.ngonde3@gmail.com</em> (et les spams), clique <strong>Activate Form</strong>, puis « Réessayer ».";
+              } else {
+                helpText.innerHTML =
+                  "Ce n’est <em>pas</em> parce que le PC est éteint (l’API tourne sur Cloudflare). Réessaie, ou vérifie l’activation FormSubmit / Apps Script.";
+              }
+            }
             mailHelpBox.classList.add("show");
           })
           .finally(function () {
