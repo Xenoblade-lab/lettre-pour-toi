@@ -940,8 +940,9 @@
       function toggleConditions() {
         var show = getDecision() === "conditions";
         conditionsWrap.classList.toggle("show", show);
-        if (!show) return;
-        conditionsEl.focus();
+        if (show) {
+          conditionsEl.focus();
+        }
       }
 
       function updateBadge() {
@@ -956,9 +957,11 @@
       }
 
       function collect() {
+        var decision = getDecision();
         return {
-          decision: getDecision(),
-          conditions: conditionsEl.value.trim(),
+          decision: decision,
+          // Conditions uniquement pour « Approuvé avec conditions »
+          conditions: decision === "conditions" ? conditionsEl.value.trim() : "",
           notes: notes.value.trim(),
           signature: signature.value.trim(),
           date: dateEl.value || todayISO(),
@@ -1048,19 +1051,23 @@
       }
 
       function buildPayload(data) {
-        return {
+        var payload = {
           _subject: "Verdict candidature petit ami — " + (labels[data.decision] || data.decision),
           _template: "table",
           _captcha: "false",
           _honey: "",
           Candidat: "Bradley Ngonde Shadai (BradGpt)",
           Decision: labels[data.decision] || data.decision,
-          Conditions: data.conditions || "(aucune — approuvé sans conditions)",
           Notes: data.notes || "(aucune)",
           Signature_intervieweuse: data.signature,
           Date_verdict: data.date,
           Heure_soumission: new Date().toLocaleString("fr-FR")
         };
+        // Champ Conditions seulement si l’option concernée est cochée
+        if (data.decision === "conditions") {
+          payload.Conditions = data.conditions || "(non précisées)";
+        }
+        return payload;
       }
 
       function sendViaAppsScript(payload) {
