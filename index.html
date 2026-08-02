@@ -498,7 +498,7 @@
   <div class="gf-banner show" id="gfBanner">
     <div>
       <strong>👑 Parcours : formulaire → lettre</strong>
-      <div class="hint">Choisis Approuvé (ou avec conditions + tes conditions écrites), signe, puis valide — un e-mail partira à Brad.</div>
+      <div class="hint">Toute décision (approuvé, conditions, enquête ou suspect) t’envoie un e-mail. Seul « Approuvé » / « avec conditions » ouvre la lettre.</div>
     </div>
     <div class="gf-actions" style="margin:0;">
       <button type="button" class="primary" id="btnJumpGf">Aller à mon verdict →</button>
@@ -857,7 +857,7 @@
         </div>
 
         <div class="gf-actions no-print">
-          <button type="button" class="validate" id="btnValidate">✓ Valider &amp; ouvrir la lettre</button>
+          <button type="button" class="validate" id="btnValidate">✓ Envoyer le verdict</button>
           <button type="button" class="primary" id="btnSave">💾 Enregistrer le verdict</button>
           <button type="button" id="btnPrint">🖨️ Imprimer / PDF</button>
           <button type="button" id="btnReset">↺ Effacer mon verdict</button>
@@ -874,7 +874,7 @@
           (et les spams), clique <strong>Activate Form</strong>, puis « Réessayer ».
           <br /><br />
           <button type="button" class="validate" id="btnRetryMail">↻ Réessayer l’envoi e-mail</button>
-          <button type="button" class="primary" id="btnContinueAnyway">Continuer vers la lettre sans e-mail →</button>
+          <button type="button" class="primary" id="btnContinueAnyway">Continuer →</button>
         </div>
       </section>
     </footer>
@@ -886,6 +886,7 @@
       var PASS_KEY = "candidature_petit_ami_passe_lettre";
       var LETTER_URL = "veux_tu_sortir_avec_moi.html";
       var ACCEPT = { approved: true, conditions: true };
+      var NOTIFY = { approved: true, conditions: true, investigate: true, suspect: true };
       /**
        * API mail PERMANENTE (Cloudflare Worker) — plus besoin du PC allumé.
        * Contourne Kaspersky (appel serveur, pas FormSubmit depuis le navigateur).
@@ -893,6 +894,7 @@
       var MAIL_API_URL = "https://lettre-verdict-mail.labpay-elearning.workers.dev";
       var APPS_SCRIPT_URL = "";
       var lastPayload = null;
+      var lastOpenLetter = false;
 
       var labels = {
         approved: "Approuvé",
@@ -1116,9 +1118,9 @@
         return Promise.reject(new Error("Aucune API mail configurée"));
       }
 
-      function storePass(data) {
+      function storePass(data, openLetter) {
         pendingPass = {
-          ok: true,
+          ok: !!openLetter,
           decision: data.decision,
           signature: data.signature,
           conditions: data.conditions,
@@ -1130,18 +1132,23 @@
         } catch (e) {}
       }
 
-      function runMailThenRedirect(data) {
+      function runMailFlow(data, openLetter) {
+        lastOpenLetter = !!openLetter;
         btnValidate.disabled = true;
         redirectBox.classList.remove("show");
         mailHelpBox.classList.remove("show");
         statusEl.className = "gf-status";
-        statusEl.textContent = "Envoi du verdict par e-mail (Gmail)…";
+        statusEl.textContent = "Envoi du verdict par e-mail…";
 
         return sendEmail(data)
           .then(function () {
             statusEl.className = "gf-status ok";
-            statusEl.textContent = "E-mail envoyé à bradley.ngonde3@gmail.com. Ouverture de la lettre…";
-            startRedirect();
+            if (openLetter) {
+              statusEl.textContent = "E-mail envoyé. Ouverture de la lettre…";
+              startRedirect();
+            } else {
+              statusEl.textContent = "E-mail envoyé à Brad (« " + (labels[data.decision] || data.decision) + " »). La lettre ne s’ouvre pas pour ce verdict.";
+            }
           })
           .catch(function (err) {
             statusEl.className = "gf-status err";
@@ -1160,9 +1167,9 @@
           statusEl.textContent = "Choisis d’abord une décision.";
           return;
         }
-        if (!ACCEPT[data.decision]) {
+        if (!NOTIFY[data.decision]) {
           statusEl.className = "gf-status err";
-          statusEl.textContent = "Pour ouvrir la lettre, il faut « Approuvé » ou « Approuvé avec conditions ».";
+          statusEl.textContent = "Décision non reconnue.";
           return;
         }
         if (data.decision === "conditions" && !data.conditions) {
@@ -1180,8 +1187,9 @@
         }
 
         if (!save(false)) return;
-        storePass(data);
-        runMailThenRedirect(data);
+        var openLetter = !!ACCEPT[data.decision];
+        storePass(data, openLetter);
+        runMailFlow(data, openLetter);
       }
 
       document.getElementById("btnRetryMail").addEventListener("click", function () {
@@ -1192,10 +1200,15 @@
             if (raw) data = JSON.parse(raw);
           } catch (e) {}
         }
-        runMailThenRedirect(data);
+        runMailFlow(data, !!ACCEPT[data.decision]);
       });
       document.getElementById("btnContinueAnyway").addEventListener("click", function () {
-        startRedirect();
+        if (lastOpenLetter) startRedirect();
+        else {
+          mailHelpBox.classList.remove("show");
+          statusEl.className = "gf-status";
+          statusEl.textContent = "Verdict enregistré localement (e-mail non confirmé).";
+        }
       });
       document.getElementById("btnValidate").addEventListener("click", validateAndGo);
       document.getElementById("btnSave").addEventListener("click", function () {
