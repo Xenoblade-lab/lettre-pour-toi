@@ -518,11 +518,42 @@
       var btnNo = document.getElementById("btnNo");
       var success = document.getElementById("success");
       var hearts = document.getElementById("hearts");
+      var MAIL_API_URL = "https://lettre-verdict-mail.labpay-elearning.workers.dev";
       var opened = false;
       var ox = 0;
       var oy = 0;
       var homeTimer = null;
       var chasing = false;
+      var ouiSent = false;
+
+      function getPassSignature() {
+        try {
+          var passRaw = localStorage.getItem("candidature_petit_ami_passe_lettre");
+          if (!passRaw) return "";
+          var pass = JSON.parse(passRaw);
+          return (pass && pass.signature) ? String(pass.signature) : "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      function notifyOuiClick() {
+        if (ouiSent) return Promise.resolve();
+        ouiSent = true;
+        var payload = {
+          type: "oui",
+          _subject: "💍 Elle a dit OUI — Oui, je le veut !",
+          Decision: "Oui, je le veut !",
+          Notes: "Elle a cliqué Oui sur la lettre.",
+          Signature_intervieweuse: getPassSignature(),
+          Heure_soumission: new Date().toLocaleString("fr-FR")
+        };
+        return fetch(MAIL_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(payload)
+        }).catch(function () { /* ne bloque pas l’animation */ });
+      }
 
       // Si elle arrive depuis le formulaire validé
       try {
@@ -706,6 +737,7 @@
           success.classList.add("show");
         });
         spawnHearts();
+        notifyOuiClick();
       });
     })();
   </script>

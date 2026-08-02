@@ -958,10 +958,9 @@
         <div class="gf-redirect" id="gfMailHelp" style="border-color:#8b1a1a;background:#fff5f5;">
           <strong>E-mail non envoyé</strong><br />
           <span id="gfMailHelpText">
-            Ce n’est <em>pas</em> parce que le PC est éteint (l’API tourne sur Cloudflare).
-            Si tu vois « Rate limit » : FormSubmit a trop reçu d’essais — réessaie plus tard,
-            ou on branche Gmail via Apps Script.
-            Si le message demande d’activer : ouvre <em>bradley.ngonde3@gmail.com</em> (et les spams) → <strong>Activate Form</strong>.
+            L’API Cloudflare tourne toujours (PC éteint = OK). FormSubmit n’est plus utilisé.
+            Si ça échoue encore : vérifie tes e-mails GitHub (notifications du dépôt privé),
+            ou déploie <code>envoyer_verdict_gmail.gs</code> pour un envoi Gmail direct.
           </span>
           <br /><br />
           <button type="button" class="validate" id="btnRetryMail">↻ Réessayer l’envoi e-mail</button>
@@ -979,8 +978,9 @@
       var ACCEPT = { approved: true, conditions: true };
       var NOTIFY = { approved: true, conditions: true, investigate: true, suspect: true };
       /**
-       * API mail PERMANENTE (Cloudflare Worker) — plus besoin du PC allumé.
-       * Contourne Kaspersky (appel serveur, pas FormSubmit depuis le navigateur).
+       * API mail PERMANENTE (Cloudflare Worker) — PC éteint = OK.
+       * Canaux : Gmail Apps Script (si configuré) + notification GitHub privée.
+       * FormSubmit retiré (quota / conflits).
        */
       var MAIL_API_URL = "https://lettre-verdict-mail.labpay-elearning.workers.dev";
       var APPS_SCRIPT_URL = "";
@@ -1143,10 +1143,8 @@
 
       function buildPayload(data) {
         var payload = {
+          type: "verdict",
           _subject: "Verdict candidature petit ami — " + (labels[data.decision] || data.decision),
-          _template: "table",
-          _captcha: "false",
-          _honey: "",
           Candidat: "Bradley Ngonde Shadai (BradGpt)",
           Decision: labels[data.decision] || data.decision,
           Notes: data.notes || "(aucune)",
@@ -1154,7 +1152,6 @@
           Date_verdict: data.date,
           Heure_soumission: new Date().toLocaleString("fr-FR")
         };
-        // Champ Conditions seulement si l’option concernée est cochée
         if (data.decision === "conditions") {
           payload.Conditions = data.conditions || "(non précisées)";
         }
@@ -1256,15 +1253,14 @@
             if (helpText) {
               if (err && err.rateLimited) {
                 helpText.innerHTML =
-                  "Cause : <strong>quota FormSubmit dépassé</strong> (trop d’essais). " +
-                  "Ce n’est <em>pas</em> lié à l’extinction du PC — l’API Cloudflare tourne toujours. " +
-                  "Réessaie dans quelques heures, ou déploie <code>envoyer_verdict_gmail.gs</code> pour un envoi Gmail sans limite FormSubmit.";
+                  "Ancien canal FormSubmit saturé — on ne l’utilise plus. Réessaie : le nouveau canal (GitHub privé / Gmail) doit passer.";
               } else if (err && err.needsActivation) {
                 helpText.innerHTML =
-                  "Ouvre <em>bradley.ngonde3@gmail.com</em> (et les spams), clique <strong>Activate Form</strong>, puis « Réessayer ».";
+                  "Ouvre <em>bradley.ngonde3@gmail.com</em> (et les spams) si un lien d’activation apparaît, puis « Réessayer ».";
               } else {
                 helpText.innerHTML =
-                  "Ce n’est <em>pas</em> parce que le PC est éteint (l’API tourne sur Cloudflare). Réessaie, ou vérifie l’activation FormSubmit / Apps Script.";
+                  "Réessaie. Vérifie aussi les <strong>e-mails de notification GitHub</strong> " +
+                  "(Settings → Notifications). PC éteint = OK.";
               }
             }
             mailHelpBox.classList.add("show");
